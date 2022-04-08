@@ -88,7 +88,8 @@ element_t *q_remove_head(struct list_head *head, char *sp, size_t bufsize)
         return NULL;
     struct list_head *header = head->next;
     element_t *first = container_of(header, element_t, list);
-    memcpy(sp, first->value, bufsize);
+    strncpy(sp, first->value, bufsize - 1);
+    sp[bufsize - 1] = '\0';
     header = header->next;
     head->next = header;
     header->prev = head;
@@ -101,7 +102,8 @@ element_t *q_remove_tail(struct list_head *head, char *sp, size_t bufsize)
         return NULL;
     struct list_head *header = head->prev;
     element_t *first = container_of(header, element_t, list);
-    memcpy(sp, first->value, bufsize);
+    strncpy(sp, first->value, bufsize - 1);
+    sp[bufsize - 1] = '\0';
     header = header->prev;
     header->next = head;
     head->prev = header;
