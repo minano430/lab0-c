@@ -13,12 +13,11 @@
 /* Create an empty queue */
 struct list_head *q_new()
 {
-    struct list_head *first = malloc(sizeof(struct list_head));
-    if (first == NULL)
-        return NULL;  // check if malloc get the spaces
-    first->prev = first;
-    first->next = first;
-    return first;
+    element_t *head = malloc(sizeof(element_t));
+    if (!head)
+        return NULL;
+    INIT_LIST_HEAD(&head->list);
+    return &head->list;
 }
 
 
@@ -27,14 +26,15 @@ void q_free(struct list_head *l)
 {
     if (!l)
         return;
-    struct list_head *head = l->next;
-    while (head != l) {
-        element_t *first = container_of(head, element_t, list);
-        head = head->next;
+    struct list_head *node = l->next;
+    while (node != l) {
+        element_t *first = container_of(node, element_t, list);
+        node = node->next;
         free(first->value);
         free(first);
     }
-    free(l);
+    element_t *head = container_of(l, element_t, list);
+    free(head);
 }
 
 /* Insert an element at head of queue */
@@ -84,7 +84,7 @@ bool q_insert_tail(struct list_head *head, char *s)
 /* Remove an element from head of queue */
 element_t *q_remove_head(struct list_head *head, char *sp, size_t bufsize)
 {
-    if (!head)
+    if (!head || head->next == head || !sp)
         return NULL;
     struct list_head *header = head->next;
     element_t *first = container_of(header, element_t, list);
@@ -98,7 +98,7 @@ element_t *q_remove_head(struct list_head *head, char *sp, size_t bufsize)
 /* Remove an element from tail of queue */
 element_t *q_remove_tail(struct list_head *head, char *sp, size_t bufsize)
 {
-    if (!head)
+    if (!head || head->next == head || !sp)
         return NULL;
     struct list_head *header = head->prev;
     element_t *first = container_of(header, element_t, list);
@@ -127,7 +127,7 @@ int q_size(struct list_head *head)
 /* Delete the middle node in queue */
 bool q_delete_mid(struct list_head *head)
 {
-    if (!head)
+    if (!head || head->next == head)
         return false;
     struct list_head *forward = head->next, *backward = head->prev;
     while (forward != backward && forward->prev != backward) {
@@ -151,7 +151,7 @@ bool q_delete_mid(struct list_head *head)
 bool q_delete_dup(struct list_head *head)
 {
     // https://leetcode.com/problems/remove-duplicates-from-sorted-list-ii/
-    if (!head)
+    if (!head || head->next == head)
         return false;
     struct list_head *header = head->next, *memory = NULL;
     int count = 1;
@@ -205,7 +205,7 @@ bool q_delete_dup(struct list_head *head)
 void q_swap(struct list_head *head)
 {
     // https://leetcode.com/problems/swap-nodes-in-pairs/
-    if (!head)
+    if (!head || head->next == head)
         return;
     // l = [bear bear gerbil gerbil meerkat fish]
     struct list_head *first = head->next, *second = first->next;
@@ -227,7 +227,7 @@ void q_swap(struct list_head *head)
 /* Reverse elements in queue */
 void q_reverse(struct list_head *head)
 {
-    if (!head)
+    if (!head || head->next == head)
         return;
     struct list_head *forward = head->next, *backward = head->prev;
     head->next = backward;
@@ -309,6 +309,8 @@ struct list_head *divide(struct list_head *head)
 void q_sort(struct list_head *head)
 {
     // Implement q_sort in quick sort
+    if (!head || head->next == head)
+        return;
     head->prev->next = head->next;
     head->next->prev = head->prev;
     struct list_head *header = divide(head->next);
