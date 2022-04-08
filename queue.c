@@ -240,70 +240,60 @@ void q_reverse(struct list_head *head)
     }
 }
 
-struct list_head *compare_sort(struct list_head *head,
-                               struct list_head *left,
-                               struct list_head *right)
+struct list_head *merge(struct list_head *left, struct list_head *right)
 {
-    // do the comparison and sort
-    // problem right one element left one element
-    for (struct list_head *merge = NULL; left || right != head;) {
-        // right list hasn't reach the end (go back to the head of sorted list)
-        // or left node has found its position for inserting
-        element_t *left_element = container_of(left, element_t, list);
-        element_t *right_element = container_of(right, element_t, list);
-        if (right == head || (left && strcasecmp(right_element->value,
-                                                 left_element->value) >= 0)) {
-            if (!merge) {
-                head = merge = left;
-            } else {
-                // merge is among right list
-                // insert left node after the node pointed by merge
-                left->prev = merge;
-                left->next = merge->next;
-                merge->next = left;
-                left->next->prev = left;
-                // shift merge pointer
-                merge = merge->next;
-            }
-            left = NULL;
-        } else {
-            if (!merge) {
-                head = merge = right;
-            } else {
-                // when merge points to the left element
-                // (left sublist contains only one element)
-                if (merge == merge->next) {
-                    // push merge on to right's head
-                    merge->next = right;
-                    merge->prev = right->prev;
-                    right->prev->next = merge;
-                    right->prev = merge;
-                }
-                // shift merge pointer
-                merge = merge->next;
+    struct list_head *merged = NULL, *head = NULL;
+    for (; left && right;) {
+        if (strcmp(list_entry(left, element_t, list)->value,
+                   list_entry(right, element_t, list)->value) >= 0) {
+            if (!merged)
+                head = merged = right;
+            else {
+                merged->next = right;
+                right->prev = merged;
+                merged = merged->next;
             }
             right = right->next;
+        } else {
+            if (!merged)
+                head = merged = left;
+            else {
+                merged->next = left;
+                left->prev = merged;
+                merged = merged->next;
+            }
+            left = left->next;
         }
+    }
+    if (!left) {
+        merged->next = right;
+        right->prev = merged;
+    } else {
+        merged->next = left;
+        left->prev = merged;
     }
     return head;
 }
 
 struct list_head *divide(struct list_head *head)
 {
-    // Divide the list into (1,n-1)
-    if (!head || head->next == head)
+    if (!head || !head->next)
         return head;
-    struct list_head *left = head;
-    struct list_head *right = left->next;
-    left->next = left;
-    left->prev->next = right;
-    right->prev = left->prev;
-    left->prev = left;
-    left = divide(left);
-    right = divide(right);
-    return compare_sort(head, left, right);
-}
+    struct list_head *fast = head, *slow = head, *mid;
+    while (true) {
+        if (!fast->next || !fast->next->next)
+            break;
+        fast = fast->next->next;
+        slow = slow->next;
+    }
 
+    mid = slow->next;
+    slow->next = NULL;
+
+    struct list_head *left = divide(head);
+    struct list_head *right = divide(mid);
+    return merge(left, right);
+}
 
 /* Sort elements of queue in ascending order */
 void q_sort(struct list_head *head)
@@ -311,11 +301,17 @@ void q_sort(struct list_head *head)
     // Implement q_sort in quick sort
     if (!head || head->next == head)
         return;
-    head->prev->next = head->next;
-    head->next->prev = head->prev;
-    struct list_head *header = divide(head->next);
-    head->next = header;
-    head->prev = header->prev;
-    header->prev->next = head;
-    header->prev = head;
+    struct list_head *node = head->next, *tail;
+
+    head->prev->next = NULL;
+    head->next = NULL;
+
+    node = divide(node);
+    tail = node;
+    while (tail->next)
+        tail = tail->next;
+    node->prev = head;
+    tail->next = head;
+    head->next = node;
+    head->prev = tail;
 }
