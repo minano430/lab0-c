@@ -207,7 +207,6 @@ void q_swap(struct list_head *head)
     // https://leetcode.com/problems/swap-nodes-in-pairs/
     if (!head || head->next == head)
         return;
-    // l = [bear bear gerbil gerbil meerkat fish]
     struct list_head *first = head->next, *second = first->next;
     while (first != head && second != head) {
         first->prev->next = second;
@@ -221,7 +220,6 @@ void q_swap(struct list_head *head)
     }
     head->next = (head->next->prev == head) ? head->next : head->next->prev;
     head->prev = (head->prev->next == head) ? head->prev : head->prev->next;
-    // l = [bear bear gerbil meerkat]
 }
 
 /* Reverse elements in queue */
@@ -279,6 +277,7 @@ struct list_head *divide(struct list_head *head)
 {
     if (!head || !head->next)
         return head;
+
     struct list_head *fast = head, *slow = head, *mid;
     while (true) {
         if (!fast->next || !fast->next->next)
@@ -301,17 +300,15 @@ void q_sort(struct list_head *head)
     // Implement q_sort in quick sort
     if (!head || head->next == head)
         return;
-    struct list_head *node = head->next, *tail;
+    struct list_head *node = head->next;
 
     head->prev->next = NULL;
     head->next = NULL;
-
     node = divide(node);
-    tail = node;
-    while (tail->next)
-        tail = tail->next;
     node->prev = head;
-    tail->next = head;
     head->next = node;
-    head->prev = tail;
+    while (node->next)
+        node = node->next;
+    node->next = head;
+    head->prev = node;
 }
